@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cache Buster 9000</title>
+<meta name="description" content="Every known technique to prevent browsers from serving stale pages. Server headers, HTML meta, JS runtime traps — all of them, in one reference. Includes a drop-in client template.">
+<meta property="og:title" content="Cache Buster 9000">
+<meta property="og:description" content="Every known technique to prevent browsers from serving stale pages. Server headers, HTML meta, JS runtime traps — all of them, in one reference. Includes a drop-in client template.">
+<meta property="og:url" content="https://wendy.monster/cache-buster-9000/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Cache Buster 9000">
+<meta name="twitter:description" content="Every known technique to prevent browsers from serving stale pages. Server headers, HTML meta, JS runtime traps — all of them, in one reference. Includes a drop-in client template.">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --panel: #141414;
+    --border: #2a2a2a;
+    --accent: #ff4d00;
+    --green: #00ff88;
+    --text: #e8e8e8;
+    --dim: #888;
+    --code-bg: #1a1a1a;
+    --tag-bg: #1e1e1e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; }
+
+  header {
+    padding: 48px 24px 32px;
+    border-bottom: 1px solid var(--border);
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .logo { font-size: 2.4rem; font-weight: 800; letter-spacing: -1px; }
+  .logo span { color: var(--accent); }
+  .tagline { color: var(--dim); margin-top: 8px; font-size: 1rem; }
+
+  main { max-width: 900px; margin: 0 auto; padding: 24px; }
+
+  .intro {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 20px 24px;
+    border-radius: 4px;
+    margin-bottom: 40px;
+    font-size: 0.95rem;
+    color: var(--dim);
+  }
+  .intro strong { color: var(--text); }
+
+  h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 48px 0 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  h2:first-of-type { margin-top: 0; }
+
+  .layer {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .layer-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .layer-num {
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 800;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .layer-num.client-num { background: #4488ff; }
+  .layer-title { font-weight: 700; font-size: 0.95rem; flex: 1; min-width: 160px; }
+  .layer-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    color: var(--dim);
+    white-space: nowrap;
+  }
+  .tag.ios { border-color: #ff44ff44; color: #ff88ff; }
+  .tag.all { border-color: #00ff8844; color: #00ff88; }
+  .tag.note { border-color: #ffaa0044; color: #ffaa44; }
+
+  .layer-body { padding: 14px 18px; }
+  .layer-desc { font-size: 0.88rem; color: var(--dim); margin-bottom: 12px; }
+  .layer-desc strong { color: var(--text); }
+  .layer-desc code { background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 0.84rem; }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 16px;
+    font-size: 0.82rem;
+    overflow-x: auto;
+    line-height: 1.5;
+    position: relative;
+  }
+  code { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; }
+  .copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--border);
+    border: none;
+    color: var(--dim);
+    font-size: 0.72rem;
+    padding: 4px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, color 0.15s;
+    z-index: 2;
+  }
+  .copy-btn:hover { background: var(--accent); color: #fff; }
+  .copy-btn.copied { background: var(--green); color: #000; }
+
+  .c { color: #666; }
+  .d { color: #79c0ff; }
+  .s { color: #a5d6ff; }
+  .k { color: #ff7b72; }
+  .f { color: #d2a8ff; }
+  .v { color: #ffa657; }
+
+  /* Server config tabs */
+  .tab-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--code-bg);
+    border-radius: 4px 4px 0 0;
+    overflow: hidden;
+  }
+  .tab-btn {
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    color: var(--dim);
+    font-size: 0.78rem;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(255,77,0,0.05); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .tab-panel pre { border-radius: 0 0 4px 4px; border-top: none; margin: 0; }
+
+  .tabbed-block { margin-bottom: 0; }
+
+  .header-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 4px;
+    font-size: 0.84rem;
+  }
+  .header-table th {
+    text-align: left;
+    color: var(--text);
+    font-weight: 600;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .header-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--dim);
+    vertical-align: top;
+  }
+  .header-table td:first-child { color: var(--text); font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.8rem; white-space: nowrap; }
+
+  .template-section {
+    background: var(--panel);
+    border: 1px solid #4488ff;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 24px;
+  }
+  .template-header {
+    background: #4488ff;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .template-header span { font-weight: 800; font-size: 0.9rem; color: #fff; }
+  .template-header .copy-btn { position: static; }
+
+  .template-note {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid #ffaa44;
+    padding: 16px 20px;
+    border-radius: 4px;
+    margin-top: 16px;
+    font-size: 0.88rem;
+    color: var(--dim);
+  }
+  .template-note strong { color: var(--text); }
+
+  .checklist {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 0.85rem;
+  }
+  .check-icon { color: var(--green); font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+  .check-text { color: var(--dim); }
+  .check-text strong { color: var(--text); display: block; margin-bottom: 2px; }
+
+  footer {
+    max-width: 900px;
+    margin: 60px auto 0;
+    padding: 24px 32px;
+    border-top: 1px solid var(--border);
+    color: var(--dim);
+    font-size: 0.82rem;
+  }
+
+  @media (max-width: 600px) {
+    header { padding: 32px 16px 24px; }
+    main { padding: 16px; }
+    .logo { font-size: 1.8rem; }
+    .tab-btn { padding: 8px 10px; font-size: 0.72rem; }
+    .header-table { font-size: 0.78rem; }
+    .header-table td:first-child { font-size: 0.74rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Cache Buster <span>9000</span></div>
+  <div class="tagline">Every known technique to prevent browsers from serving stale pages. Server headers, HTML meta, JS runtime traps &mdash; all of them, in one reference. Includes a drop-in client template.</div>
+</header>
+
+<main>
+
+<div class="intro">
+  <strong>No single technique covers everything.</strong> iOS Safari's Back-Forward Cache ignores all HTTP headers.
+  Some CDNs ignore <code>Expires</code>. Android Chrome caches <code>fetch()</code> responses separately from page loads.
+  Service Workers can override everything. This reference combines every known layer so nothing slips through.
+</div>
+
+<!-- =========================================================
+     SERVER-SIDE HEADERS
+     ========================================================= -->
+
+<h2>Server-Side Headers</h2>
+
+<div class="layer">
+  <div class="layer-header">
+    <div class="layer-num">S1</div>
+    <div class="layer-title">Anti-Cache Response Headers</div>
+    <div class="layer-tags">
+      <span class="tag all">all browsers</span>
+    </div>
+  </div>
+  <div class="layer-body">
+    <div class="layer-desc">Set these headers on every HTML response. Together, they cover HTTP/1.0 proxies, HTTP/1.1 caches, shared CDN caches, and all modern browsers. This is the single most important layer.</div>
+
+    <div class="tabbed-block" data-tabgroup="server">
+      <div class="tab-bar">
+        <button class="tab-btn active" data-server="nginx" onclick="setServer('nginx')">nginx</button>
+        <button class="tab-btn" data-server="apache" onclick="setServer('apache')">Apache</button>
+        <button class="tab-btn" data-server="caddy" onclick="setServer('caddy')">Caddy</button>
+        <button class="tab-btn" data-server="lighttpd" onclick="setServer('lighttpd')">lighttpd</button>
+        <button class="tab-btn" data-server="node" onclick="setServer('node')">Node.js</button>
+      </div>
+      <div class="tab-panel active" data-server="nginx">
+        <pre><code id="s1-nginx"><span class="c"># Add to your server or location block</span>
+add_header Cache-Control <span class="s">"no-store, no-cache, max-age=0, must-revalidate, proxy-revalidate"</span> always;
+add_header Pragma        <span class="s">"no-cache"</span> always;
+add_header Expires       <span class="s">"0"</span> always;
+add_header Vary          <span class="s">"*"</span> always;
+add_header Surrogate-Control <span class="s">"no-store"</span> always;
+
+<span class="c"># "always" ensures headers are set on ALL response codes, not just 2xx/3xx</span></code><button class="copy-btn" onclick="copyCode('s1-nginx',this)">copy</button></pre>
+      </div>
+      <div class="tab-panel" data-server="apache">
+        <pre><code id="s1-apache"><span class="c"># Requires mod_headers (usually enabled by default)</span>
+<span class="c"># Add to .htaccess, &lt;Directory&gt;, or &lt;Location&gt; block</span>
+Header always set Cache-Control <span class="s">"no-store, no-cache, max-age=0, must-revalidate, proxy-revalidate"</span>
+Header always set Pragma        <span class="s">"no-cache"</span>
+Header always set Expires       <span class="s">"0"</span>
+Header always set Vary          <span class="s">"*"</span>
+Header always set Surrogate-Control <span class="s">"no-store"</span>
+
+<span class="c"># "always" ensures headers are set even on error responses (4xx, 5xx)</span></code><button class="copy-btn" onclick="copyCode('s1-apache',this)">copy</button></pre>
+      </div>
+      <div class="tab-panel" data-server="caddy">
+        <pre><code id="s1-caddy"><span class="c"># Add to your site block in Caddyfile</span>
+header {
+    Cache-Control      <span class="s">"no-store, no-cache, max-age=0, must-revalidate, proxy-revalidate"</span>
+    Pragma             <span class="s">"no-cache"</span>
+    Expires            <span class="s">"0"</span>
+    Vary               <span class="s">"*"</span>
+    Surrogate-Control  <span class="s">"no-store"</span>
+}</code><button class="copy-btn" onclick="copyCode('s1-caddy',this)">copy</button></pre>
+      </div>
+      <div class="tab-panel" data-server="lighttpd">
+        <pre><code id="s1-lighttpd"><span class="c"># Requires mod_setenv</span>
+server.modules += ( <span class="s">"mod_setenv"</span> )
+
+setenv.add-response-header = (
+    <span class="s">"Cache-Control"</span>     => <span class="s">"no-store, no-cache, max-age=0, must-revalidate, proxy-revalidate"</span>,
+    <span class="s">"Pragma"</span>            => <span class="s">"no-cache"</span>,
+    <span class="s">"Expires"</span>           => <span class="s">"0"</span>,
+    <span class="s">"Vary"</span>              => <span class="s">"*"</span>,
+    <span class="s">"Surrogate-Control"</span> => <span class="s">"no-store"</span>
+)</code><button class="copy-btn" onclick="copyCode('s1-lighttpd',this)">copy</button></pre>
+      </div>
+      <div class="tab-panel" data-server="node">
+        <pre><code id="s1-node"><span class="c">// Express / Connect middleware</span>
+app.use(<span class="k">function</span>(req, res, next) {
+  res.set(<span class="s">'Cache-Control'</span>, <span class="s">'no-store, no-cache, max-age=0, must-revalidate, proxy-revalidate'</span>);
+  res.set(<span class="s">'Pragma'</span>,         <span class="s">'no-cache'</span>);
+  res.set(<span class="s">'Expires'</span>,        <span class="s">'0'</span>);
+  res.set(<span class="s">'Vary'</span>,           <span class="s">'*'</span>);
+  res.set(<span class="s">'Surrogate-Control'</span>, <span class="s">'no-store'</span>);
+  next();
+});</code><button class="copy-btn" onclick="copyCode('s1-node',this)">copy</button></pre>
+      </div>
+    </div>
+
+    <table class="header-table">
+      <tr><th>Header</th><th>What it does</th></tr>
+      <tr>
+        <td>Cache-Control: no-store</td>
+        <td>Strongest directive (<a href="https://www.rfc-editor.org/rfc/rfc7234#section-5.2.2.3" style="color:var(--accent)">RFC 7234 &sect;5.2.2.3</a>). Tells every cache &mdash; browser, proxy, CDN &mdash; to never store any part of the response. <code>no-cache</code> forces revalidation on every use. <code>must-revalidate</code> prevents serving stale content even when disconnected. <code>proxy-revalidate</code> extends this to shared caches.</td>
+      </tr>
+      <tr>
+        <td>Pragma: no-cache</td>
+        <td>HTTP/1.0 backward compatibility. Some older proxies and corporate network appliances only understand HTTP/1.0 headers. Harmless to include.</td>
+      </tr>
+      <tr>
+        <td>Expires: 0</td>
+        <td>Marks the response as already expired. Technically the spec expects a date string, but <code>0</code> is universally treated as &ldquo;expired&rdquo; by all known implementations.</td>
+      </tr>
+      <tr>
+        <td>Vary: *</td>
+        <td>Signals the response varies on factors beyond request headers (<a href="https://www.rfc-editor.org/rfc/rfc7231#section-7.1.4" style="color:var(--accent)">RFC 7231 &sect;7.1.4</a>). Shared caches (CDNs, reverse proxies) will never reuse this response for another request.</td>
+      </tr>
+      <tr>
+        <td>Surrogate-Control: no-store</td>
+        <td>CDN-specific header recognized by Fastly, Varnish, Akamai, and other edge caches. Controls CDN caching independently from <code>Cache-Control</code>. Stripped before reaching the browser.</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+
+<!-- =========================================================
+     SERVER-INJECTED VERSIONING (hybrid — needs server + client)
+     ========================================================= -->
+
+<div class="layer">
+  <div class="layer-header">
+    <div class="layer-num">S2</div>
+    <div class="layer-title">Build Version Injection</div>
+    <div class="layer-tags">
+      <span class="tag all">all browsers</span>
+      <span class="tag note">server required</span>
+    </div>
+  </div>
+  <div class="layer-body">
+    <div class="layer-desc">The server replaces a placeholder string (<code>YOUR_BUILD_HASH</code>) in the HTML with a unique value on each deploy — a content hash, git commit, or timestamp. The client JS (S3 and S4 below) then uses this value to detect stale pages. <strong>Without this step, S3 and S4 are inert — they won't hurt anything, but they won't fire either.</strong> Most build tools (Webpack, Vite, etc.) can inject this at build time instead of at serve time.</div>
+
+    <div class="tabbed-block" data-tabgroup="server">
+      <div class="tab-bar">
+        <button class="tab-btn active" data-server="nginx" onclick="setServer('nginx')">nginx</button>
+        <button class="tab-btn" data-server="apache" onclick="setServer('apache')">Apache</button>
+        <button class="tab-btn" data-server="caddy" onclick="setServer('caddy')">Caddy</button>
+        <button class="tab-btn" data-server="lighttpd" onclick="setServer('lighttpd')">lighttpd</button>
+        <button class="tab-btn" data-server="node" onclick="setServer('node')">Node.js</button>
+      </div>
+      <div class="tab-panel active" data-server="nginx">
+        <pre><code id="s2-nginx"><span class="c"># Requires ngx_http_sub_module (included in most nginx builds)</span>
+<span class="c"># Add to your server or location block</span>
+<span class="k">set</span> $build_hash <span class="s">"abc123"</span>;  <span class="c"># Update this value on every deploy</span>
+sub_filter <span class="s">'YOUR_BUILD_HASH'</span> $build_hash;
+sub_filter_once <span class="k">on</span>;
+sub_filter_types text/html;
+
+<span class="c"># NOTE: sub_filter does not work on gzip-compressed responses.</span>
+<span class="c"># If you serve gzipped HTML, disable gzip for this location:</span>
+<span class="c"># gzip off;</span>
+<span class="c"># Or if proxying: proxy_set_header Accept-Encoding "";</span></code><button class="copy-btn" onclick="copyCode('s2-nginx',this)">copy</button></pre>
+      </div>
+      <div class="tab-panel" data-server="apache">
+        <pre><code id="s2-apache"><span class="c"># mod_substitute does NOT support env var expansion — hardcode the hash directly.</span>
+<span class="c"># Requires mod_substitute. Add to .htaccess or &lt;Location&gt; block.</span>
+<span class="c"># Update the hash value on each deploy (via deploy script or CI).</span>
+AddOutputFilterByType SUBSTITUTE text/html
+Substitute <span class="s">"s/YOUR_BUILD_HASH/abc123/n"</span>
+
+<span class="c"># Alternatively, use a deploy-time sed command (same as lighttpd approach):</span>
+<span class="c"># sed -i "s/YOUR_BUILD_HASH/$BUILD_HASH/g" /path/to/index.html</span></code><button class="copy-btn" onclick="copyCode('s2-apache',this)">copy</button></pre>
+      </div>
+      <div class="tab-panel" data-server="caddy">
+        <pre><code id="s2-caddy"><span class="c"># Use Caddy's templates middleware to inject a variable</span>
+<span class="c"># In your Caddyfile site block:</span>
+templates
+
+<span class="c"># Set an environment variable before starting Caddy:</span>
+<span class="c"># BUILD_HASH=abc123 caddy run</span>
+<span class="c"># Then in your HTML, replace YOUR_BUILD_HASH with:</span>
+<span class="c"># {{env "BUILD_HASH"}}</span></code><button class="copy-btn" onclick="copyCode('s2-caddy',this)">copy</button></pre>
+      </div>
+      <div class="tab-panel" data-server="lighttpd">
+        <pre><code id="s2-lighttpd"><span class="c"># lighttpd has no built-in HTML substitution.</span>
+<span class="c"># Recommended: inject the hash at build time with a sed command in your deploy script:</span>
+<span class="c">#</span>
+<span class="c"># BUILD_HASH=$(git rev-parse --short HEAD)</span>
+<span class="c"># sed -i "s/YOUR_BUILD_HASH/$BUILD_HASH/g" /path/to/index.html</span>
+<span class="c">#</span>
+<span class="c"># Or use any build tool (Vite, Webpack, Parcel) to inject at build time.</span></code><button class="copy-btn" onclick="copyCode('s2-lighttpd',this)">copy</button></pre>
+      </div>
+      <div class="tab-panel" data-server="node">
+        <pre><code id="s2-node"><span class="c">// Read and inject the hash when serving the HTML file</span>
+<span class="k">const</span> fs = require(<span class="s">'fs'</span>);
+<span class="k">const</span> BUILD_HASH = process.env.BUILD_HASH || require(<span class="s">'./package.json'</span>).version;
+<span class="k">const</span> html = fs.readFileSync(<span class="s">'./public/index.html'</span>, <span class="s">'utf8'</span>)
+  .replace(<span class="s">'YOUR_BUILD_HASH'</span>, BUILD_HASH);
+
+app.get(<span class="s">'/'</span>, (req, res) => {
+  res.set(<span class="s">'Content-Type'</span>, <span class="s">'text/html'</span>);
+  res.send(html);
+});</code><button class="copy-btn" onclick="copyCode('s2-node',this)">copy</button></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="layer">
+  <div class="layer-header">
+    <div class="layer-num">S3</div>
+    <div class="layer-title">URL Version Hash</div>
+    <div class="layer-tags">
+      <span class="tag all">all browsers</span>
+      <span class="tag note">requires S2</span>
+    </div>
+  </div>
+  <div class="layer-body">
+    <div class="layer-desc">Appends the build hash as a <code>?v=</code> query parameter. Each deploy produces a different URL — the browser has no cache entry for it and must fetch fresh. This is the most reliable technique because it forces a new request even when every other mechanism fails. <strong>Server-side setup: S2 only</strong> — once the build hash is injected, this is purely client JS with no additional server configuration. If the placeholder hasn't been replaced, this block exits immediately — no redirect loops, no broken behavior.</div>
+    <pre><code id="s3"><span class="c">// [S3] URL versioning — redirect to ?v=BUILD if stale or missing</span>
+(<span class="k">function</span>() {
+  <span class="k">var</span> BUILD = <span class="s">'YOUR_BUILD_HASH'</span>;
+  <span class="c">// Guard: split string so server injection only replaces the variable above,</span>
+  <span class="c">// not the sentinel. If BUILD still equals the placeholder, injection isn't set up.</span>
+  <span class="k">if</span> (BUILD === <span class="s">'YOUR_'</span> + <span class="s">'BUILD_HASH'</span>) <span class="k">return</span>;
+  <span class="k">var</span> p = <span class="k">new</span> URLSearchParams(window.location.search);
+  <span class="k">if</span> (p.get(<span class="s">'v'</span>) !== BUILD) {
+    p.set(<span class="s">'v'</span>, BUILD);
+    window.location.replace(window.location.pathname + <span class="s">'?'</span> + p.toString());
+  }
+})();</code><button class="copy-btn" onclick="copyCode('s3',this)">copy</button></pre>
+  </div>
+</div>
+
+<div class="layer">
+  <div class="layer-header">
+    <div class="layer-num">S4</div>
+    <div class="layer-title">localStorage Version Sentinel + Tab Watcher</div>
+    <div class="layer-tags">
+      <span class="tag all">all browsers</span>
+      <span class="tag note">requires S2</span>
+    </div>
+  </div>
+  <div class="layer-body">
+    <div class="layer-desc">Stores the build version in <code>localStorage</code>. On load, if the stored version differs from the current one, the page is stale — reload. A <code>visibilitychange</code> listener extends this to long-lived tabs: when the user switches back after a deploy, the check runs again. <strong>Server-side setup: S2 only</strong> — all server config is covered by S2, this is purely client JS. If the placeholder hasn't been replaced, both checks are skipped entirely — safe to include unconditionally.</div>
+    <pre><code id="s4"><span class="c">// [S4] localStorage sentinel + visibilitychange</span>
+(<span class="k">function</span>() {
+  <span class="k">var</span> BUILD = <span class="s">'YOUR_BUILD_HASH'</span>;
+  <span class="c">// Split string so server injection only replaces the variable, not the sentinel.</span>
+  <span class="k">if</span> (BUILD === <span class="s">'YOUR_'</span> + <span class="s">'BUILD_HASH'</span>) <span class="k">return</span>;
+  <span class="k">var</span> KEY = <span class="s">'app_build'</span>;
+  <span class="k">try</span> {
+    <span class="k">var</span> stored = localStorage.getItem(KEY);
+    <span class="k">if</span> (stored && stored !== BUILD) {
+      localStorage.setItem(KEY, BUILD);
+      window.location.reload();
+      <span class="k">return</span>;
+    }
+    localStorage.setItem(KEY, BUILD);
+  } <span class="k">catch</span>(e) {} <span class="c">// localStorage blocked in some private browsing modes</span>
+  document.addEventListener(<span class="s">'visibilitychange'</span>, <span class="k">function</span>() {
+    <span class="k">if</span> (document.visibilityState === <span class="s">'visible'</span>) {
+      <span class="k">try</span> {
+        <span class="k">if</span> (localStorage.getItem(KEY) !== BUILD) window.location.reload();
+      } <span class="k">catch</span>(e) {}
+    }
+  });
+})();</code><button class="copy-btn" onclick="copyCode('s4',this)">copy</button></pre>
+  </div>
+</div>
+
+
+<!-- =========================================================
+     CLIENT-SIDE TECHNIQUES
+     ========================================================= -->
+
+<h2>Client-Side Techniques</h2>
+
+<div class="layer">
+  <div class="layer-header">
+    <div class="layer-num client-num">C1</div>
+    <div class="layer-title">HTML Meta Tags</div>
+    <div class="layer-tags">
+      <span class="tag note">limited effect</span>
+    </div>
+  </div>
+  <div class="layer-body">
+    <div class="layer-desc">Duplicate cache directives as HTML <code>&lt;meta&gt;</code> tags. <strong>Important caveat:</strong> modern browsers largely ignore <code>http-equiv</code> cache directives in favor of actual HTTP headers. The HTML Living Standard does not list <code>Cache-Control</code> as a valid <code>http-equiv</code> value. However, some Android WebViews, embedded browsers, RSS readers, and older crawlers still parse them. They cost nothing to include and occasionally help.</div>
+    <pre><code id="c1"><span class="c">&lt;!-- Place in &lt;head&gt;, before any other tags --&gt;</span>
+&lt;meta http-equiv="Cache-Control" content="no-store, no-cache, max-age=0, must-revalidate"&gt;
+&lt;meta http-equiv="Pragma" content="no-cache"&gt;
+&lt;meta http-equiv="Expires" content="0"&gt;</code><button class="copy-btn" onclick="copyCode('c1',this)">copy</button></pre>
+  </div>
+</div>
+
+<div class="layer">
+  <div class="layer-header">
+    <div class="layer-num client-num">C2</div>
+    <div class="layer-title">Back-Forward Cache Bypass</div>
+    <div class="layer-tags">
+      <span class="tag ios">iOS Safari</span>
+      <span class="tag all">all browsers</span>
+    </div>
+  </div>
+  <div class="layer-body">
+    <div class="layer-desc">When you hit the back button, browsers can restore a frozen in-memory snapshot of the page (the <strong>bfcache</strong>) instead of making a network request. This completely bypasses all HTTP headers. iOS Safari uses this aggressively. The <code>pageshow</code> event fires with <code>event.persisted === true</code> when restoring from bfcache. Force a real network reload in that case. <em>Supported in all major browsers since 2015+, iOS Safari since iOS 5.</em></div>
+    <pre><code id="c2"><span class="c">// Place early in your script, before app initialization</span>
+window.addEventListener(<span class="s">'pageshow'</span>, <span class="k">function</span>(e) {
+  <span class="k">if</span> (e.persisted) {
+    window.location.reload();
+  }
+});</code><button class="copy-btn" onclick="copyCode('c2',this)">copy</button></pre>
+  </div>
+</div>
+
+<div class="layer">
+  <div class="layer-header">
+    <div class="layer-num client-num">C3</div>
+    <div class="layer-title">fetch() cache: 'no-store'</div>
+    <div class="layer-tags">
+      <span class="tag all">all browsers</span>
+    </div>
+  </div>
+  <div class="layer-body">
+    <div class="layer-desc">The Fetch API maintains its own interaction with the browser's HTTP cache. Setting <code>cache: 'no-store'</code> tells the browser to skip the cache entirely &mdash; it won't use a cached response, and it won't store the new response. This prevents stale API responses even when the browser has cached previous calls to the same URL. <em>Supported in all current browsers. The <code>cache</code> request option specifically requires Chrome 64+, Firefox 61+, Safari 10.1+.</em></div>
+    <pre><code id="c3"><span class="c">// Add to every fetch() call in your API wrapper</span>
+<span class="k">var</span> response = <span class="k">await</span> fetch(url, {
+  method: method,
+  headers: { <span class="s">'Content-Type'</span>: <span class="s">'application/json'</span> },
+  cache: <span class="s">'no-store'</span>
+});</code><button class="copy-btn" onclick="copyCode('c3',this)">copy</button></pre>
+  </div>
+</div>
+
+<div class="layer">
+  <div class="layer-header">
+    <div class="layer-num client-num">C4</div>
+    <div class="layer-title">Service Worker Unregistration</div>
+    <div class="layer-tags">
+      <span class="tag all">all browsers</span>
+    </div>
+  </div>
+  <div class="layer-body">
+    <div class="layer-desc">A previously registered Service Worker can intercept all network requests via its <code>fetch</code> event handler and serve cached responses, completely bypassing every other cache-busting technique. Defensively unregister any existing Service Workers on every page load. <strong>Note:</strong> after <code>unregister()</code> is called, the SW remains active until all its controlled pages close &mdash; but it won't intercept new navigations.</div>
+    <pre><code id="c4"><span class="k">if</span> (<span class="s">'serviceWorker'</span> <span class="k">in</span> navigator) {
+  navigator.serviceWorker.getRegistrations().then(<span class="k">function</span>(regs) {
+    regs.forEach(<span class="k">function</span>(r) { r.unregister(); });
+  });
+}</code><button class="copy-btn" onclick="copyCode('c4',this)">copy</button></pre>
+  </div>
+</div>
+
+
+<!-- =========================================================
+     DROP-IN CLIENT TEMPLATE
+     ========================================================= -->
+
+<h2>Drop-in Client Template</h2>
+
+<div class="template-section">
+  <div class="template-header">
+    <span>All client-side layers &mdash; paste into your HTML</span>
+    <button class="copy-btn" onclick="copyCode('full-template',this)" style="color:#fff;border:1px solid rgba(255,255,255,0.3)">copy all</button>
+  </div>
+  <pre style="border:none;border-radius:0;margin:0"><code id="full-template">&lt;!-- Cache Buster 9000: Client-Side Layers --&gt;
+&lt;!-- Place these meta tags at the top of &lt;head&gt; --&gt;
+&lt;meta http-equiv="Cache-Control" content="no-store, no-cache, max-age=0, must-revalidate"&gt;
+&lt;meta http-equiv="Pragma" content="no-cache"&gt;
+&lt;meta http-equiv="Expires" content="0"&gt;
+
+&lt;script&gt;
+// === CACHE BUSTER 9000 ===
+// Place this block as the FIRST thing inside your &lt;script&gt; tag,
+// before any other application code.
+
+// [C2] bfcache bypass — iOS Safari back button
+window.addEventListener('pageshow', function(e) {
+  if (e.persisted) window.location.reload();
+});
+
+// [S3 + S4] URL versioning + localStorage sentinel + visibilitychange
+// Requires server-side build hash injection (see S2 in the Server-Side section).
+// If YOUR_BUILD_HASH hasn't been replaced by your server or build tool,
+// these blocks exit immediately — safe to include unconditionally.
+(function() {
+  var BUILD = 'YOUR_BUILD_HASH';
+  var KEY = 'app_build';
+
+  // [S3] URL versioning: redirect to ?v=BUILD if query param is stale
+  // Guard uses split string so server injection only replaces the variable above.
+  if (BUILD !== 'YOUR_' + 'BUILD_HASH') {
+    var p = new URLSearchParams(window.location.search);
+    if (p.get('v') !== BUILD) {
+      p.set('v', BUILD);
+      window.location.replace(window.location.pathname + '?' + p.toString());
+      return; // stop executing — page is about to redirect
+    }
+  }
+
+  // [S4] localStorage sentinel: detect stale cached page
+  if (BUILD !== 'YOUR_' + 'BUILD_HASH') {
+    try {
+      var stored = localStorage.getItem(KEY);
+      if (stored &amp;&amp; stored !== BUILD) {
+        localStorage.setItem(KEY, BUILD);
+        window.location.reload();
+        return;
+      }
+      localStorage.setItem(KEY, BUILD);
+    } catch(e) {}
+
+    // visibilitychange: catch long-lived stale tabs
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'visible') {
+        try {
+          if (localStorage.getItem(KEY) !== BUILD) window.location.reload();
+        } catch(e) {}
+      }
+    });
+  }
+})();
+
+// [C4] Service Worker unregistration
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    regs.forEach(function(r) { r.unregister(); });
+  });
+}
+
+// [C3] For your fetch() wrapper, add: cache: 'no-store'
+// Example: fetch(url, { method: 'GET', cache: 'no-store' })
+&lt;/script&gt;</code></pre>
+</div>
+
+<div class="template-note" style="border-left-color: var(--accent);">
+  <strong>This template covers client-side layers only.</strong> Server-side response headers (Cache-Control, Pragma, Expires, Vary, Surrogate-Control) must be configured separately in your web server &mdash; see the <em>Server-Side Headers</em> section above. Without those headers, browsers and proxies may still cache your pages regardless of what the client-side JavaScript does. The client techniques are a safety net, not a replacement for proper HTTP headers.
+</div>
+<div class="template-note" style="margin-top: 10px;">
+  <strong>The S3 and S4 blocks (URL versioning and localStorage sentinel) require server-side build hash injection to have any effect.</strong> If <code>YOUR_BUILD_HASH</code> is never replaced, those blocks exit immediately &mdash; they are not harmful and will not cause redirect loops or errors, but they simply won't fire. To activate them, configure your server or build tool to substitute the placeholder with a unique value on each deploy (see <em>S2: Build Version Injection</em> above).
+</div>
+
+<!-- =========================================================
+     COVERAGE MATRIX
+     ========================================================= -->
+
+<h2>Coverage Matrix</h2>
+<div class="checklist">
+  <div class="check-item"><span class="check-icon">&#10003;</span><div class="check-text"><strong>Browser HTTP cache</strong>Cache-Control: no-store (S1)</div></div>
+  <div class="check-item"><span class="check-icon">&#10003;</span><div class="check-text"><strong>CDN &amp; reverse proxy caching</strong>Vary: * + Surrogate-Control (S1)</div></div>
+  <div class="check-item"><span class="check-icon">&#10003;</span><div class="check-text"><strong>Legacy HTTP/1.0 proxies</strong>Pragma + Expires (S1)</div></div>
+  <div class="check-item"><span class="check-icon">&#10003;</span><div class="check-text"><strong>Stale cached page load</strong>URL versioning (S3) + localStorage sentinel (S4)</div></div>
+  <div class="check-item"><span class="check-icon">&#10003;</span><div class="check-text"><strong>Long-lived tabs after deploy</strong>visibilitychange (S4)</div></div>
+  <div class="check-item"><span class="check-icon">&#10003;</span><div class="check-text"><strong>iOS Safari back button</strong>bfcache bypass (C2)</div></div>
+  <div class="check-item"><span class="check-icon">&#10003;</span><div class="check-text"><strong>Cached API / fetch() responses</strong>cache: 'no-store' (C3)</div></div>
+  <div class="check-item"><span class="check-icon">&#10003;</span><div class="check-text"><strong>Rogue Service Workers</strong>SW unregister (C4)</div></div>
+  <div class="check-item"><span class="check-icon">&#10003;</span><div class="check-text"><strong>WebViews &amp; embedded browsers</strong>HTML meta tags (C1)</div></div>
+</div>
+
+</main>
+
+<footer>Cache Buster 9000 &mdash; assembled by Wendy after one too many &ldquo;why is iOS showing old stuff&rdquo; incidents</footer>
+
+<script>
+// Copy code from a pre>code block
+function copyCode(id, btn) {
+  var el = document.getElementById(id);
+  var text = el.innerText || el.textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    btn.textContent = 'copied!';
+    btn.classList.add('copied');
+    setTimeout(function() { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1800);
+  }).catch(function() {
+    // Fallback for browsers without clipboard API
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = 'copied!';
+    btn.classList.add('copied');
+    setTimeout(function() { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1800);
+  });
+}
+
+// Global server tab switcher — clicking a tab changes ALL tabbed blocks on the page
+function setServer(name) {
+  // Update all tab buttons
+  var btns = document.querySelectorAll('.tab-btn');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle('active', btns[i].getAttribute('data-server') === name);
+  }
+  // Update all tab panels
+  var panels = document.querySelectorAll('.tab-panel');
+  for (var i = 0; i < panels.length; i++) {
+    panels[i].classList.toggle('active', panels[i].getAttribute('data-server') === name);
+  }
+}
+</script>
+
+</body>
+</html>
